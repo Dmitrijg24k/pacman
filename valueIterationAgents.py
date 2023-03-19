@@ -53,10 +53,14 @@ class ValueIterationAgent(ValueEstimationAgent):
                     self.values[state] = self.mdp.getReward(state, 'exit', '')
                 else:
                     possibleActions = self.mdp.getPossibleActions(state)
-                    iterNumber[state] = max([self.computeQValueFromValues(state, actions) for actions in possibleActions])
+                    maxPossibleAction = self.computeQValueFromValues(state, possibleActions[0])
+                    for action in possibleActions:
+                        qvalue = self.computeQValueFromValues(state, action)
+                        if maxPossibleAction <= qvalue:
+                            maxPossibleAction = qvalue
+                    iterNumber[state] = maxPossibleAction
             self.values = iterNumber
             i = i+1
-        "*** YOUR CODE HERE ***"
 
 
     def getValue(self, state):
