@@ -75,8 +75,11 @@ class SimpleExtractor(FeatureExtractor):
     def getFeatures(self, state, action):
         # extract the grid of food and wall locations and get the ghost locations
         food = state.getFood()
+        capsules = state.getCapsules()
         walls = state.getWalls()
         ghosts = state.getGhostPositions()
+        # allGhost = state.getGhostStates()
+        # print "allGhost", allGhost[0]
 
         features = util.Counter()
 
@@ -86,12 +89,48 @@ class SimpleExtractor(FeatureExtractor):
         x, y = state.getPacmanPosition()
         dx, dy = Actions.directionToVector(action)
         next_x, next_y = int(x + dx), int(y + dy)
+        actionsByCoordinate = [(1.0, 0.0), (-1.0, 0.0), (0.0, 1.0), (0.0, -1.0)]
+        features["#-of-ghosts-2-step-away"] = 0
+        for actions in actionsByCoordinate:
+            dx2, dy2 = actions
+            next_x2, next_y2 = int(next_x + dx2), int(next_y + dy2)
+            features["#-of-ghosts-2-step-away"] += sum((next_x2, next_y2) in Actions.getLegalNeighbors(g, walls) for g in ghosts)
+        # getPossibleActions
+        # legalActions = self.getLegalActions(state)
 
         # count the number of ghosts 1-step away
         features["#-of-ghosts-1-step-away"] = sum((next_x, next_y) in Actions.getLegalNeighbors(g, walls) for g in ghosts)
+        
+        for index in range(len( capsules )):
+            if not features["#-of-ghosts-1-step-away"] and (next_x, next_y) == capsules[index]:
+                features["eats-capsule"] = 2.0
+                break
+            # features["eats-capsule"] = 0.0
+        
+        features["#-of-scared-ghosts-1-step-away"] = 0
+        for index in range( 1, len( state.data.agentStates ) ):
+            if state.data.agentStates[index].scaredTimer > 4:
+                x_agent, y_agent = state.data.agentStates[index].getPosition()
+                # print "scared", 0 + ((next_x, next_y) == (x_agent, y_agent))
+                if (next_x, next_y) == (x_agent, y_agent):
+                    features["#-of-scared-ghosts-1-step-away"] += 1
+
+        features["#-of-not-scared-ghosts-1-step-away"] = 0
+        for index in range( 1, len( state.data.agentStates ) ):
+            if state.data.agentStates[index].scaredTimer < 4:
+                x_agent, y_agent = state.data.agentStates[index].getPosition()
+                # print "scared", 0 + ((next_x, next_y) == (x_agent, y_agent))
+                if (next_x, next_y) == (x_agent, y_agent):
+                    features["#-of-not-scared-ghosts-1-step-away"] += 1
+
+        for index in range( 1, len( state.data.agentStates ) ):
+            if state.data.agentStates[index].scaredTimer > 4 and features["#-of-scared-ghosts-1-step-away"]: #features["#-of-ghosts-1-step-away"]
+                features["eats-ghost"] = 5.0
+                break
+            # features["eats-ghost"] = 0.0 #.getPosition()
 
         # if there is no danger of ghosts then add the food feature
-        if not features["#-of-ghosts-1-step-away"] and food[next_x][next_y]:
+        if not features["#-of-ghosts-1-step-away"] and not features["#-of-ghosts-2-step-away"] and not features["eats-ghost"] and food[next_x][next_y]:
             features["eats-food"] = 1.0
 
         dist = closestFood((next_x, next_y), food, walls)
@@ -100,4 +139,10 @@ class SimpleExtractor(FeatureExtractor):
             # will diverge wildly
             features["closest-food"] = float(dist) / (walls.width * walls.height)
         features.divideAll(10.0)
+        # print "eats-capsule", features["eats-capsule"]
+        # print "eats-ghost", features["eats-ghost"]
+        # print "#-of-ghosts-1-step-away", features["#-of-ghosts-1-step-away"]
+        # print "#-of-ghosts-2-step-away", features["#-of-ghosts-2-step-away"]
+        # print "closest-food", features["closest-food"]
+        # print "eats-food", features["eats-food"]
         return features
