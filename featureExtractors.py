@@ -85,58 +85,115 @@ class SimpleExtractor(FeatureExtractor):
 
         features["bias"] = 1.0
 
-        # compute the location of pacman after he takes the action
+        # compute the location of pacman after he takes the action + + +
         x, y = state.getPacmanPosition()
         dx, dy = Actions.directionToVector(action)
         next_x, next_y = int(x + dx), int(y + dy)
         actionsByCoordinate = [(1.0, 0.0), (-1.0, 0.0), (0.0, 1.0), (0.0, -1.0)]
-        features["#-of-ghosts-2-step-away"] = 0
+
+        features["#-of-not-scared-ghosts-1-step-away"] = 0.0
+        for index in range( 1, len( state.data.agentStates ) ):
+            if state.data.agentStates[index].scaredTimer < 2:
+                x_agent, y_agent = state.data.agentStates[index].getPosition()
+                # print "scared", 0 + ((next_x, next_y) == (x_agent, y_agent))
+                if (next_x, next_y) == (x_agent, y_agent):
+                    features["#-of-not-scared-ghosts-1-step-away"] = 8.0
+                    break
+
+        features["#-of-not-scared-ghosts-2-step-away"] = 0.0
         for actions in actionsByCoordinate:
             dx2, dy2 = actions
             next_x2, next_y2 = int(next_x + dx2), int(next_y + dy2)
-            features["#-of-ghosts-2-step-away"] += sum((next_x2, next_y2) in Actions.getLegalNeighbors(g, walls) for g in ghosts)
-        # getPossibleActions
-        # legalActions = self.getLegalActions(state)
+            for index in range( 1, len( state.data.agentStates ) ):
+                if state.data.agentStates[index].scaredTimer < 2:
+                    x_agent, y_agent = state.data.agentStates[index].getPosition()
+                    # print "scared", 0 + ((next_x, next_y) == (x_agent, y_agent))
+                    if (next_x2, next_y2) == (x_agent, y_agent):
+                        features["#-of-not-scared-ghosts-2-step-away"] = 5.0
+                        break
 
-        # count the number of ghosts 1-step away
-        features["#-of-ghosts-1-step-away"] = sum((next_x, next_y) in Actions.getLegalNeighbors(g, walls) for g in ghosts)
-        
-        for index in range(len( capsules )):
-            if not features["#-of-ghosts-1-step-away"] and (next_x, next_y) == capsules[index]:
-                features["eats-capsule"] = 2.0
-                break
+        armstrong = 0
+        for index in range( 1, len( state.data.agentStates ) ):
+            if state.data.agentStates[index].scaredTimer > 2:
+                armstrong += 1
+        if armstrong > 2:
+
+            # features["#-of-ghosts-2-step-away"] = 0
+            # for actions in actionsByCoordinate:
+            #     dx2, dy2 = actions
+            #     next_x2, next_y2 = int(next_x + dx2), int(next_y + dy2)
+            #     features["#-of-ghosts-2-step-away"] += sum((next_x2, next_y2) in Actions.getLegalNeighbors(g, walls) for g in ghosts)
+            # getPossibleActions
+            # legalActions = self.getLegalActions(state)
+
+            # count the number of ghosts 1-step away
+            #features["#-of-ghosts-1-step-away"] = sum((next_x, next_y) in Actions.getLegalNeighbors(g, walls) for g in ghosts)
+            # features["#-of-not-scared-ghosts-1-step-away"] = 0
+            # for index in range( 1, len( state.data.agentStates ) ):
+            #     if state.data.agentStates[index].scaredTimer < 4:
+            #         x_agent, y_agent = state.data.agentStates[index].getPosition()
+            #         # print "scared", 0 + ((next_x, next_y) == (x_agent, y_agent))
+            #         if (next_x, next_y) == (x_agent, y_agent):
+            #             features["#-of-not-scared-ghosts-1-step-away"] += 2.5 + + +
+            # + + +
+            # + P +
+            # + + +
+            features["#-of-scared-ghosts-1-step-away"] = 0.0
+            for index in range( 1, len( state.data.agentStates ) ):
+                x_agent, y_agent = state.data.agentStates[index].getPosition()
+                if state.data.agentStates[index].scaredTimer > 2:
+                    # print "scared", 0 + ((next_x, next_y) == (x_agent, y_agent))
+                    if (next_x, next_y) == (x_agent, y_agent):
+                        features["#-of-scared-ghosts-1-step-away"] = 4.0
+                else :
+                    if (next_x, next_y) == (x_agent, y_agent):
+                        features["#-of-scared-ghosts-1-step-away"] = 0.0
+                        break
+
+            features["#-of-scared-ghosts-2-step-away"] = 0.0
+            for actions in actionsByCoordinate:
+                dx2, dy2 = actions
+                next_x2, next_y2 = int(next_x + dx2), int(next_y + dy2)
+                for index in range( 1, len( state.data.agentStates ) ):
+                    x_agent, y_agent = state.data.agentStates[index].getPosition()
+                    if state.data.agentStates[index].scaredTimer > 2:
+                        # print "scared", 0 + ((next_x, next_y) == (x_agent, y_agent))
+                        if (next_x2, next_y2) == (x_agent, y_agent):
+                            features["#-of-scared-ghosts-2-step-away"] = 4.0
+                    else :
+                        if (next_x2, next_y2) == (x_agent, y_agent):
+                            features["#-of-scared-ghosts-2-step-away"] = 0.0
+                            break
+
+        else:
             # features["eats-capsule"] = 0.0
-        
-        features["#-of-scared-ghosts-1-step-away"] = 0
-        for index in range( 1, len( state.data.agentStates ) ):
-            if state.data.agentStates[index].scaredTimer > 4:
-                x_agent, y_agent = state.data.agentStates[index].getPosition()
-                # print "scared", 0 + ((next_x, next_y) == (x_agent, y_agent))
-                if (next_x, next_y) == (x_agent, y_agent):
-                    features["#-of-scared-ghosts-1-step-away"] += 1
-
-        features["#-of-not-scared-ghosts-1-step-away"] = 0
-        for index in range( 1, len( state.data.agentStates ) ):
-            if state.data.agentStates[index].scaredTimer < 4:
-                x_agent, y_agent = state.data.agentStates[index].getPosition()
-                # print "scared", 0 + ((next_x, next_y) == (x_agent, y_agent))
-                if (next_x, next_y) == (x_agent, y_agent):
-                    features["#-of-not-scared-ghosts-1-step-away"] += 1
-
-        for index in range( 1, len( state.data.agentStates ) ):
-            if state.data.agentStates[index].scaredTimer > 4 and features["#-of-scared-ghosts-1-step-away"]: #features["#-of-ghosts-1-step-away"]
-                features["eats-ghost"] = 5.0
-                break
+        # if state.data.agentStates[0].scaredTimer:
+        #     print "pacman:", state._capsuleEaten
+        # features["#-of-scared-ghosts-1-step-away"] = 0
+        # for index in range( 1, len( state.data.agentStates ) ):
+        #     if state.data.agentStates[index].scaredTimer > 4:
+        #         x_agent, y_agent = state.data.agentStates[index].getPosition()
+        #         # print "scared", 0 + ((next_x, next_y) == (x_agent, y_agent))
+        #         if (next_x, next_y) == (x_agent, y_agent):
+        #             features["#-of-scared-ghosts-1-step-away"] += 2.5
+            for index in range(len( capsules )):
+                if not features["#-of-not-scared-ghosts-1-step-away"] and (next_x, next_y) == capsules[index]:
+                    features["eats-capsule"] = 3.0
+                    break
+        # for index in range( 1, len( state.data.agentStates ) ):
+        #     if state.data.agentStates[index].scaredTimer > 2 and features["#-of-scared-ghosts-1-step-away"] and not features["#-of-not-scared-ghosts-1-step-away"]: #features["#-of-ghosts-1-step-away"]
+        #         features["eats-ghost"] = 5
+        #         break
             # features["eats-ghost"] = 0.0 #.getPosition()
 
-        # if there is no danger of ghosts then add the food feature
-        if not features["#-of-ghosts-1-step-away"] and not features["#-of-ghosts-2-step-away"] and not features["eats-ghost"] and food[next_x][next_y]:
+            # if there is no danger of ghosts then add the food feature
+        if not features["#-of-not-scared-ghosts-1-step-away"] and food[next_x][next_y]:
             features["eats-food"] = 1.0
 
         dist = closestFood((next_x, next_y), food, walls)
         if dist is not None:
-            # make the distance a number less than one otherwise the update
-            # will diverge wildly
+                # make the distance a number less than one otherwise the update
+                # will diverge wildly
             features["closest-food"] = float(dist) / (walls.width * walls.height)
         features.divideAll(10.0)
         # print "eats-capsule", features["eats-capsule"]
